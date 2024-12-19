@@ -14,6 +14,8 @@ def main(page: ft.Page):
         { 'titulo': 'Fazer compras', 'concluido': False},
     ]
 
+    ordenado_por_concluidos = False
+
     def atualizar(e=None):
         print(e.control.value if e else "Atualizando barra de progresso")
         for hl in lista_de_habitos:
@@ -21,7 +23,7 @@ def main(page: ft.Page):
                 hl['concluido'] = e.control.value
         
         concluido = list(filter(lambda x: x['concluido'], lista_de_habitos))
-        total = len(concluido) / len(lista_de_habitos)
+        total = len(concluido) / len(lista_de_habitos) if len(lista_de_habitos) > 0 else 0
         
         progresso_barra.value = total  # Definindo como float
         progresso_texto.value = f'{total:.0%}'  # String formatada para texto
@@ -29,10 +31,29 @@ def main(page: ft.Page):
         progresso_barra.update()
         progresso_texto.update()
         print(f'{total:.0%}', total)
-  
+
     def adicionar_habito(e):
         print(e.control.value)
         lista_de_habitos.append({'titulo': e.control.value, 'concluido': False})
+        atualizar_lista_habitos()
+        e.control.value = ''
+        e.control.update()
+        e.control.focus()
+        atualizar()  # Chamar atualizar para refletir a mudança na barra de progresso
+
+    def ordenar_habitos(e):
+        nonlocal ordenado_por_concluidos
+        ordenado_por_concluidos = not ordenado_por_concluidos
+        if ordenado_por_concluidos:
+            lista_de_habitos.sort(key=lambda x: x['concluido'])
+            ordenar_button.text = "Ordenar por não concluídos"
+        else:
+            lista_de_habitos.sort(key=lambda x: not x['concluido'])
+            ordenar_button.text = "Ordenar por concluídos"
+        atualizar_lista_habitos()
+        page.update()
+
+    def atualizar_lista_habitos():
         habitos.content.controls = [
             ft.Checkbox(
                 label= hl['titulo'],
@@ -41,10 +62,6 @@ def main(page: ft.Page):
             ) for hl in lista_de_habitos
         ]
         habitos.update()
-        e.control.value = ''
-        e.control.update()
-        e.control.focus()
-        atualizar()  # Chamar atualizar para refletir a mudança na barra de progresso
 
     layout = ft.Column(
         expand=True,
@@ -55,7 +72,7 @@ def main(page: ft.Page):
                 color= ft.colors.WHITE
             ),
             ft.Text(
-                value= 'Como estão seu hábitos hoje?',
+                value= 'Como estão seus hábitos hoje?',
                 size= 20,
                 color= ft.colors.WHITE
             ),
@@ -92,6 +109,10 @@ def main(page: ft.Page):
                 value= 'Marcar suas tarefas como concluídas te motiva a continuar focado!',
                 size= 15,
                 color= ft.colors.WHITE
+            ),
+            ordenar_button := ft.ElevatedButton(
+                text="Ordenar por concluídos",
+                on_click=ordenar_habitos
             ),
             habitos := ft.Container(
                 expand= True,
